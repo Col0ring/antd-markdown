@@ -1,27 +1,23 @@
 import React from 'react'
-import { Button } from 'antd'
-import logo from '@/logo.svg'
-import './App.less'
-const { remote } = window.require('electron')
-console.log(remote)
+import { Row, Col } from 'antd'
+import styles from './App.module.less'
+import { LayoutProvider } from '@/hooks/useLayout'
+import FileManagementArea from '@/components/FileManagementArea'
+import EditingArea from '@/components/EditingArea'
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit<code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Button type="primary">Learn React</Button>
-        </a>
-      </header>
-    </div>
+    <LayoutProvider>
+      <div className={styles.app}>
+        <Row>
+          <Col span={6}>
+            <FileManagementArea />
+          </Col>
+          <Col span={18}>
+            <EditingArea />
+          </Col>
+        </Row>
+      </div>
+    </LayoutProvider>
   )
 }
 

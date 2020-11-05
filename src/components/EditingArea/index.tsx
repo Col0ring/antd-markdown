@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import Editor, { EditorProps } from './Editor'
-import FileTabs, { FileTabsProps } from '../ EditingArea/FileTabs'
+import FileTabs, { FileTabsProps } from './FileTabs'
 import EmptyData, { EmptyDataProps } from './EmptyData'
 import useLayout from '@/hooks/useLayout'
 

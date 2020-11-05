@@ -1,0 +1,15 @@
+.fileManagementAreaContainer {
+  width: 100%;
+  min-height: 100%;
+  height: calc(100vh - 10px);
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  .fileListContainer {
+    flex: 1;
+    overflow: hidden;
+    &:hover {
+      overflow: auto;
+    }
+  }
+}

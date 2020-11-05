@@ -1,0 +1,21 @@
+.fileListItem {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  .name {
+    padding: 0 10px;
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    cursor: pointer;
+    > div {
+      position: relative;
+      left: 0;
+      top: 6px;
+      flex: 1;
+    }
+  }
+  .operateBtn {
+    flex-shrink: 0;
+  }
+}

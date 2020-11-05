@@ -18,7 +18,7 @@ const FileTabs: React.FC<FileTabsProps> = ({
   activeId,
   unsavedIds = [],
   onCloseTab,
-  onTabClick,
+  onTabClick
 }) => {
   return (
     <Tabs
@@ -31,7 +31,7 @@ const FileTabs: React.FC<FileTabsProps> = ({
         const withUnsavedMark = unsavedIds.includes(file.id)
         const tabClassName = classnames(styles.tabPaneContent, {
           [styles.active]: file.id === activeId,
-          [styles.unSavedMark]: withUnsavedMark,
+          [styles.unSavedMark]: withUnsavedMark
         })
         return (
           <Tabs.TabPane
