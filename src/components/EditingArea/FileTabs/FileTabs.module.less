@@ -1,0 +1,32 @@
+.tabPaneContent {
+  span {
+    font-size: 12px;
+    margin-left: 10px;
+    &.close {
+      visibility: hidden;
+    }
+  }
+  &.active {
+    .close {
+      visibility: visible;
+    }
+  }
+  &.unSavedMark {
+    .close {
+      display: none;
+    }
+    &:hover {
+      .close {
+        display: inline;
+      }
+      .unSaved {
+        display: none;
+      }
+    }
+  }
+  &:hover {
+    .close {
+      visibility: visible;
+    }
+  }
+}
