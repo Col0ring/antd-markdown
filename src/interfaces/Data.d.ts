@@ -4,10 +4,10 @@ export type ID = string | number
 export interface File {
   id: ID
   path: string
-  isNew: boolean
+  isNew?: boolean
+  isLoaded?: boolean
   name: string
-  content: string
-  createdAt: number
+  content?: string
 }
 
 export interface LayoutProps {
@@ -21,4 +21,5 @@ export interface LayoutProps {
 export interface LayoutProviderProps<S extends LayoutProps = LayoutProps> {
   layout: S
   setLayout: (f: (draft: Draft<S>) => void | S) => void
+  throwError: (message: string) => void
 }

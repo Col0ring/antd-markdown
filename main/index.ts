@@ -1,32 +1,51 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindowConstructorOptions, ipcMain } from 'electron'
 import path from 'path'
 import isDev from 'electron-is-dev'
+import AppWindow from './AppWindow'
 
-let win: BrowserWindow | null = null
-function createWindow() {
-  // 创建浏览器窗口。
-  win = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      // 加上这个就可以在渲染进程使用 winodw.require 引入 electron 模块
-      nodeIntegration: true
+let mainWin: AppWindow | null = null
+let settingWin: AppWindow | null = null
+
+function createSettingWindow(
+  parentWin: BrowserWindowConstructorOptions['parent']
+) {
+  ipcMain.on('open-settings-window', () => {
+    const settingsWindowConfig: BrowserWindowConstructorOptions = {
+      width: 500,
+      height: 400,
+      parent: parentWin,
     }
-  })
-
-  const urlLocation = isDev
-    ? 'http://localhost:3000'
-    : `file://${path.join(__dirname, './index.html')}`
-
-  win.loadURL(urlLocation)
-
-  // 当 window 被关闭，触发该事件
-  win.on('closed', () => {
-    win = null
+    const settingsFileLocation = `file://${path.join(
+      __dirname,
+      './settings/index.html'
+    )}`
+    settingWin = new AppWindow(settingsWindowConfig, settingsFileLocation)
+    settingWin.removeMenu()
+    settingWin.on('closed', () => {
+      settingWin = null
+    })
   })
 }
 
-app.on('ready', createWindow)
+function createMainWindow() {
+  const mainWindowConfig: BrowserWindowConstructorOptions = {
+    width: 1024,
+    height: 680,
+  }
+  const urlLocation = isDev
+    ? 'http://localhost:3000'
+    : `file://${path.join(__dirname, './index.html')}`
+  // 创建浏览器窗口。
+  mainWin = new AppWindow(mainWindowConfig, urlLocation)
+
+  // 当 window 被关闭，触发该事件
+  mainWin.on('closed', () => {
+    mainWin = null
+  })
+  createSettingWindow(mainWin)
+}
+
+app.on('ready', createMainWindow)
 
 // 当全部窗口关闭时退出。
 app.on('window-all-closed', () => {
@@ -35,8 +54,8 @@ app.on('window-all-closed', () => {
   }
 })
 
-app.on('activate', () => {
-  if (win === null) {
-    createWindow()
+app.on('activate', async () => {
+  if (mainWin === null) {
+    createMainWindow()
   }
 })
