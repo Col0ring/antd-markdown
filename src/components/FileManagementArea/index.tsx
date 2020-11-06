@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import { usePrevious } from 'ahooks'
-import FileSearch, { FileSearchProps } from './FileSearch'
+import FileSearch, { FileSearchProps } from '../FileSearch'
 import FileList from './FileList'
 import FooterMenu from './FooterMenu'
 import styles from './FileManagementArea.module.less'
@@ -9,45 +9,52 @@ import { flattenFiles, obj2Arr } from '@/utils/help'
 export interface FileManagementArea {}
 
 const FileManagementArea: React.FC<FileManagementArea> = () => {
-  const [searchValue, setSearchValue] = useState('')
-  const preSearchValue = usePrevious(searchValue)
   const [searchLoading, setSearchLoading] = useState(false)
   const { layout, setLayout, createNewFile, importFiles } = useLayout()
-  const { files } = layout
+  const { files, searchValue } = layout
+  const preSearchValue = usePrevious(searchValue)
   const filesArr = obj2Arr(files)
-
   const onFileSearch: FileSearchProps['onSearch'] = useCallback(
     (value) => {
-      if (preSearchValue === value) {
+      if (preSearchValue === searchValue) {
         return
       }
       setSearchLoading(true)
-      setSearchValue(value)
       const newFiles = flattenFiles(
         filesArr.filter((file) => file.name.includes(value))
       )
       setLayout((draft) => {
+        draft.searchValue = value
         draft.searchFiles = newFiles
       })
       setSearchLoading(false)
     },
-    [filesArr, preSearchValue, setLayout]
+    [filesArr, preSearchValue, searchValue, setLayout]
   )
-  const onSearchChange: FileSearchProps['onChange'] = useCallback((value) => {
-    setSearchValue(value)
-  }, [])
+  const onSearchChange: FileSearchProps['onChange'] = useCallback(
+    (value) => {
+      setLayout((draft) => {
+        draft.searchValue = value
+      })
+    },
+    [setLayout]
+  )
 
   const onCreateFile = useCallback(() => {
     createNewFile()
-    setSearchValue('')
-  }, [createNewFile])
+    setLayout((draft) => {
+      draft.searchValue = ''
+    })
+  }, [createNewFile, setLayout])
 
   const onImportFiles = useCallback(async () => {
     const res = await importFiles()
     if (res) {
-      setSearchValue('')
+      setLayout((draft) => {
+        draft.searchValue = ''
+      })
     }
-  }, [importFiles])
+  }, [importFiles, setLayout])
 
   return (
     <div className={styles.fileManagementAreaContainer}>

@@ -19,54 +19,24 @@ export interface FileListProps {}
 
 const FileList: React.FC<FileListProps> = () => {
   const [editingId, setEditingId] = useState<ID>('')
-  const { layout, setLayout, throwError, closeTab } = useLayout()
+  const { layout, setLayout, throwError, deleteFile } = useLayout()
   const { files, searchFiles } = layout
   const fileArr = obj2Arr(searchFiles)
 
   const onFileDelete = useCallback(
     async (id: ID) => {
-      const { [id]: value, ...otherFiles } = files
-      if (files[id].isNew) {
-        setLayout((draft) => {
-          draft.files = otherFiles
-        })
-      } else {
-        const res = await fileHelper.deleteFile(files[id].path)
-        if (!res) {
-          throwError('删除文件失败')
-        }
-        closeTab(id)
-        setLayout((draft) => {
-          draft.files = otherFiles
-        })
-      }
+      await deleteFile(id)
     },
-    [closeTab, files, setLayout, throwError]
+    [deleteFile]
   )
 
   const onFileClick: FileItemProps['onClick'] = useCallback(
     async (id) => {
-      const clickFile = files[id]
-      if (!clickFile.isLoaded) {
-        const res = await fileHelper.readFile(clickFile.path)
-        if (res) {
-          const value = typeof res === 'boolean' ? '' : res
-          const newFile = { ...files[id], content: value, isLoaded: true }
-          setLayout((draft) => {
-            draft.activeFileId = id
-            draft.files[id] = newFile
-          })
-        } else {
-          throwError('打开文件失败')
-          await onFileDelete(id)
-        }
-      } else {
-        setLayout((draft) => {
-          draft.activeFileId = id
-        })
-      }
+      setLayout((draft) => {
+        draft.activeFileId = id
+      })
     },
-    [files, onFileDelete, setLayout, throwError]
+    [setLayout]
   )
 
   const onEditingStart: FileItemProps['onEditingStart'] = useCallback(
@@ -87,16 +57,16 @@ const FileList: React.FC<FileListProps> = () => {
       const newPath = isNew
         ? path.join(savedLocation, `${name}.md`)
         : path.join(path.dirname(files[id].path), `${name}.md`)
+      if (fs.existsSync(newPath)) {
+        throwError('目标文件已存在')
+        setEditingId('')
+        isNew && (await onFileDelete(id))
+        return
+      }
       const modifiedFile = { ...files[id], name, isNew: false, path: newPath }
       const newFiles = { ...files, [id]: modifiedFile }
       let res: boolean | string = false
       if (isNew) {
-        if (fs.existsSync(newPath)) {
-          throwError('目标文件已存在', () => {
-            onFileDelete(id)
-          })
-          return
-        }
         res = await fileHelper.writeFile(newPath, files[id].content || '')
       } else {
         const oldPath = files[id].path
@@ -107,6 +77,7 @@ const FileList: React.FC<FileListProps> = () => {
           draft.files = newFiles
           draft.activeFileId = id
         })
+        setEditingId('')
       } else {
         throwError(`${isNew ? '新增' : '修改'}文件失败`)
         await onFileDelete(id)
@@ -118,17 +89,9 @@ const FileList: React.FC<FileListProps> = () => {
   const onEditingChange: FileItemProps['onEditingChange'] = useCallback(
     async (id, val) => {
       const file = searchFiles[id]
-      if (file.isNew) {
-        if (id === editingId) {
-          return
-        }
-        setEditingId(id)
-      } else {
-        setEditingId('')
-      }
       await onSaveEdit(id, val, !!file.isNew)
     },
-    [editingId, onSaveEdit, searchFiles]
+    [onSaveEdit, searchFiles]
   )
 
   return (

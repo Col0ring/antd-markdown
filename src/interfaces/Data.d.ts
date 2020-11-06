@@ -12,6 +12,7 @@ export interface File {
 }
 
 export interface LayoutProps {
+  searchValue: string
   files: GLobalObject<File>
   searchFiles: GLobalObject<File>
   activeFileId: ID
@@ -26,4 +27,5 @@ export interface LayoutProviderProps<S extends LayoutProps = LayoutProps> {
   createNewFile: () => void
   importFiles: () => Promise<boolean>
   closeTab: (id: ID) => void
+  deleteFile: (id: ID) => Promise<boolean>
 }

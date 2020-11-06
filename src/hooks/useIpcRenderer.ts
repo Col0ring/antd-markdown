@@ -15,7 +15,7 @@ const useIpcRenderer = (keyCallbackMap: GLobalObject<Listener>) => {
         ipcRenderer.removeListener(key, keyCallbackMap[key])
       })
     }
-  })
+  }, [keyCallbackMap])
 }
 
 export default useIpcRenderer

@@ -3,20 +3,27 @@ import { useImmer } from 'use-immer'
 import { Modal } from 'antd'
 import { v4 as uuid } from 'uuid'
 import pathModule from 'path'
-import { flattenFiles } from '@/utils/help'
+import fsModule from 'fs'
+import { flattenFiles, obj2Arr } from '@/utils/help'
 import { saveFiles2Store, fileStore } from '@/utils/store'
 import { ID, LayoutProps, LayoutProviderProps, File } from '@/interfaces/Data'
+import fileHelper from '@/utils/fileHelper'
 const { remote } = window.require('electron')
 const path = window.require('path') as typeof pathModule
-
-const files = fileStore.get('files') as GLobalObject<File>
+const fs = window.require('fs') as typeof fsModule
+const originFiles = flattenFiles(
+  obj2Arr((fileStore.get('files') as GLobalObject<File>) || {}).filter((file) =>
+    fs.existsSync(file.path)
+  )
+)
 
 const initialState: LayoutProps = {
+  searchValue: '',
   activeFileId: '',
   openedFileIds: [],
   unsavedFileIds: [],
-  files: files,
-  searchFiles: files,
+  files: originFiles,
+  searchFiles: originFiles,
 }
 const LayoutContext = createContext<LayoutProviderProps>({
   layout: {
@@ -27,6 +34,7 @@ const LayoutContext = createContext<LayoutProviderProps>({
   createNewFile: () => {},
   importFiles: async () => false,
   closeTab: () => {},
+  deleteFile: async () => false,
 })
 
 export const LayoutProvider: React.FC = ({ children }) => {
@@ -59,6 +67,7 @@ export const LayoutProvider: React.FC = ({ children }) => {
       draft.files = { ...draft.files, [newId]: newFile }
     })
   }, [setLayout])
+
   const importFiles = useCallback(async () => {
     try {
       const res = await remote.dialog.showOpenDialog({
@@ -77,7 +86,7 @@ export const LayoutProvider: React.FC = ({ children }) => {
           name: path.basename(pathname, path.extname(pathname)),
           path: pathname,
         }))
-        const newFiles = { ...files, ...flattenFiles(importFilesArr) }
+        const newFiles = { ...layout.files, ...flattenFiles(importFilesArr) }
         setLayout((draft) => {
           draft.files = newFiles
         })
@@ -122,6 +131,59 @@ export const LayoutProvider: React.FC = ({ children }) => {
     [layout, setLayout]
   )
 
+  const deleteFile = useCallback(
+    async (id: ID) => {
+      const { [id]: value, ...otherFiles } = layout.files
+      if (layout.files[id].isNew) {
+        setLayout((draft) => {
+          draft.files = otherFiles
+        })
+      } else {
+        const res = await fileHelper.deleteFile(layout.files[id].path)
+        if (!res) {
+          throwError('删除文件失败')
+          return false
+        }
+        closeTab(id)
+        setLayout((draft) => {
+          draft.files = otherFiles
+        })
+      }
+      return true
+    },
+    [closeTab, layout.files, setLayout, throwError]
+  )
+
+  const loadFile = useCallback(
+    async (id: ID) => {
+      const loadFile = layout.files[id]
+      if (!loadFile) {
+        return false
+      }
+      if (!loadFile.isLoaded) {
+        const res = await fileHelper.readFile(loadFile.path)
+        if (res) {
+          const value = typeof res === 'boolean' ? '' : res
+          const newFile = {
+            ...layout.files[id],
+            content: value,
+            originContent: value,
+            isLoaded: true,
+          }
+          setLayout((draft) => {
+            draft.files[id] = newFile
+          })
+        } else {
+          throwError('打开文件失败')
+          await deleteFile(id)
+          return false
+        }
+      }
+      return true
+    },
+    [deleteFile, layout.files, setLayout, throwError]
+  )
+
   useEffect(() => {
     setLayout((draft) => {
       draft.searchFiles = draft.files
@@ -142,6 +204,13 @@ export const LayoutProvider: React.FC = ({ children }) => {
       })
     }
   }, [layout.activeFileId, layout.openedFileIds, setLayout])
+
+  useEffect(() => {
+    if (layout.activeFileId) {
+      loadFile(layout.activeFileId)
+    }
+  }, [layout.activeFileId, loadFile])
+
   return (
     <LayoutContext.Provider
       value={{
@@ -151,6 +220,7 @@ export const LayoutProvider: React.FC = ({ children }) => {
         createNewFile,
         importFiles,
         closeTab,
+        deleteFile,
       }}
     >
       {children}

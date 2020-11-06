@@ -4,6 +4,7 @@ import styles from './App.module.less'
 import { LayoutProvider } from '@/hooks/useLayout'
 import FileManagementArea from '@/components/FileManagementArea'
 import EditingArea from '@/components/EditingArea'
+import GlobalFileSearch from '@/components/GlobalFileSearch'
 function App() {
   return (
     <LayoutProvider>
@@ -17,6 +18,7 @@ function App() {
           </Col>
         </Row>
       </div>
+      <GlobalFileSearch />
     </LayoutProvider>
   )
 }
