@@ -1,7 +1,8 @@
-import { app, BrowserWindowConstructorOptions, ipcMain } from 'electron'
+import { app, BrowserWindowConstructorOptions, ipcMain, Menu } from 'electron'
 import path from 'path'
 import isDev from 'electron-is-dev'
 import AppWindow from './AppWindow'
+import menuTemplate from './menuTemplate'
 
 let mainWin: AppWindow | null = null
 let settingWin: AppWindow | null = null
@@ -42,6 +43,8 @@ function createMainWindow() {
   mainWin.on('closed', () => {
     mainWin = null
   })
+  const menu = Menu.buildFromTemplate(menuTemplate)
+  Menu.setApplicationMenu(menu)
   createSettingWindow(mainWin)
 }
 

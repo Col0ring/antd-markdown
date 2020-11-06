@@ -4,7 +4,7 @@ const fs = (window.require('fs') as typeof fsModule).promises
 const errorCapture = async (
   cb: (...args: any[]) => Promise<any>,
   ...args: any[]
-): Promise<boolean> => {
+): Promise<string | boolean> => {
   try {
     return (await (cb && cb(...args))) || true
   } catch (error) {

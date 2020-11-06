@@ -8,6 +8,7 @@ export interface File {
   isLoaded?: boolean
   name: string
   content?: string
+  originContent?: string
 }
 
 export interface LayoutProps {
@@ -21,5 +22,8 @@ export interface LayoutProps {
 export interface LayoutProviderProps<S extends LayoutProps = LayoutProps> {
   layout: S
   setLayout: (f: (draft: Draft<S>) => void | S) => void
-  throwError: (message: string) => void
+  throwError: (message: string, cb?: (close: () => void) => any) => void
+  createNewFile: () => void
+  importFiles: () => Promise<boolean>
+  closeTab: (id: ID) => void
 }
