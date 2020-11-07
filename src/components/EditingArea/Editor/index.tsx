@@ -3,20 +3,20 @@ import SimpleMDE from 'react-simplemde-editor'
 import 'easymde/dist/easymde.min.css'
 import { File, ID } from '@/interfaces/Data'
 export interface EditorProps {
-  activeFile: File
+  editingFile: File
   onChange: (id: ID, value: string) => void
 }
 
-const Editor: React.FC<EditorProps> = ({ activeFile, onChange }) => {
+const Editor: React.FC<EditorProps> = ({ editingFile, onChange }) => {
   return (
     <SimpleMDE
-      key={activeFile.id}
-      value={activeFile.content}
-      onChange={(value) => onChange(activeFile.id, value)}
+      key={editingFile.id}
+      value={editingFile.content}
+      onChange={(value) => onChange(editingFile.id, value)}
       options={{
-        autofocus: !!activeFile.content,
-        minHeight: '450px',
-        spellChecker: false,
+        autofocus: true,
+        maxHeight: 'calc(100vh - 175px)',
+        spellChecker: true,
         toolbar: [
           'bold',
           'italic',

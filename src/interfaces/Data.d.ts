@@ -16,6 +16,8 @@ export interface LayoutProps {
   files: GLobalObject<File>
   searchFiles: GLobalObject<File>
   activeFileId: ID
+  editingFileId: ID
+  fileLoading: boolean
   openedFileIds: ID[]
   unsavedFileIds: ID[]
 }

@@ -8,6 +8,7 @@ import { flattenFiles, obj2Arr } from '@/utils/help'
 import { saveFiles2Store, fileStore } from '@/utils/store'
 import { ID, LayoutProps, LayoutProviderProps, File } from '@/interfaces/Data'
 import fileHelper from '@/utils/fileHelper'
+import useIpcRenderer from '@/hooks/useIpcRenderer'
 const { remote } = window.require('electron')
 const path = window.require('path') as typeof pathModule
 const fs = window.require('fs') as typeof fsModule
@@ -20,6 +21,8 @@ const originFiles = flattenFiles(
 const initialState: LayoutProps = {
   searchValue: '',
   activeFileId: '',
+  editingFileId: '',
+  fileLoading: false,
   openedFileIds: [],
   unsavedFileIds: [],
   files: originFiles,
@@ -160,8 +163,15 @@ export const LayoutProvider: React.FC = ({ children }) => {
       if (!loadFile) {
         return false
       }
+
       if (!loadFile.isLoaded) {
+        setLayout((draft) => {
+          draft.fileLoading = true
+        })
         const res = await fileHelper.readFile(loadFile.path)
+        setLayout((draft) => {
+          draft.fileLoading = false
+        })
         if (res) {
           const value = typeof res === 'boolean' ? '' : res
           const newFile = {
@@ -207,10 +217,20 @@ export const LayoutProvider: React.FC = ({ children }) => {
 
   useEffect(() => {
     if (layout.activeFileId) {
-      loadFile(layout.activeFileId)
+      loadFile(layout.activeFileId).then((res) => {
+        if (res) {
+          setLayout((draft) => {
+            draft.editingFileId = layout.activeFileId
+          })
+        }
+      })
     }
-  }, [layout.activeFileId, loadFile])
+  }, [layout.activeFileId, loadFile, setLayout])
 
+  useIpcRenderer({
+    'create-new-file': createNewFile,
+    'import-file': importFiles,
+  })
   return (
     <LayoutContext.Provider
       value={{

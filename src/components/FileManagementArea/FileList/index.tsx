@@ -4,11 +4,11 @@ import fsModule from 'fs'
 import { List } from 'antd'
 import { ID } from '@/interfaces/Data'
 import { settingsStore } from '@/utils/store'
-import styles from './FileList.module.less'
 import FileItem, { FileItemProps } from '../FileItem'
 import useLayout from '@/hooks/useLayout'
 import fileHelper from '@/utils/fileHelper'
-import { obj2Arr } from '@/utils/help'
+import { getParentNode, obj2Arr } from '@/utils/help'
+import useContextMenu from '@/hooks/useContextMenu'
 const path = window.require('path') as typeof pathModule
 const { remote } = window.require('electron')
 const fs = window.require('fs') as typeof fsModule
@@ -52,6 +52,7 @@ const FileList: React.FC<FileListProps> = () => {
         if (isNew) {
           await onFileDelete(id)
         }
+        setEditingId('')
         return
       }
       const newPath = isNew
@@ -63,6 +64,7 @@ const FileList: React.FC<FileListProps> = () => {
         isNew && (await onFileDelete(id))
         return
       }
+
       const modifiedFile = { ...files[id], name, isNew: false, path: newPath }
       const newFiles = { ...files, [id]: modifiedFile }
       let res: boolean | string = false
@@ -94,14 +96,62 @@ const FileList: React.FC<FileListProps> = () => {
     [onSaveEdit, searchFiles]
   )
 
+  const currentClickElement = useContextMenu(
+    [
+      {
+        label: '打开',
+        click() {
+          onContextClick((parentElement) => {
+            if (parentElement) {
+              onFileClick(parentElement.dataset.id as string)
+            }
+          })
+        },
+      },
+      {
+        label: '重命名',
+        click() {
+          onContextClick((parentElement) => {
+            if (parentElement) {
+              setEditingId(parentElement.dataset.id as string)
+            }
+          })
+        },
+      },
+      {
+        label: '删除',
+        click() {
+          onContextClick((parentElement) => {
+            if (parentElement) {
+              onFileDelete(parentElement.dataset.id as string)
+            }
+          })
+        },
+      },
+    ],
+    {
+      targetSelector: '.context-menu-target-list',
+    }
+  )
+  const onContextClick = useCallback(
+    (cb: (parentNode: HTMLElement | null) => void) => {
+      cb(
+        getParentNode(
+          currentClickElement.current,
+          'context-menu-target-list-item'
+        )
+      )
+    },
+    [currentClickElement]
+  )
   return (
     <List
-      className={styles.list}
+      className="context-menu-target-list"
       dataSource={fileArr}
       renderItem={(item) => {
         return (
           <List.Item
-            className={styles.fileListItemWrap}
+            className="context-menu-target-list-item"
             data-name={item.name}
             data-id={item.id}
           >

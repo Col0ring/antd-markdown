@@ -18,7 +18,7 @@ function createSettingWindow(
     }
     const settingsFileLocation = `file://${path.join(
       __dirname,
-      './settings/index.html'
+      './settingTemplate/index.html'
     )}`
     settingWin = new AppWindow(settingsWindowConfig, settingsFileLocation)
     settingWin.removeMenu()

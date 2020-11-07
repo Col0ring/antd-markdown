@@ -10,7 +10,7 @@ const useContextMenu = (
     target,
   }: {
     targetSelector?: string
-    target: HTMLElement
+    target?: HTMLElement
   }
 ) => {
   const currentClickElement = useRef<HTMLElement | null>(null)
@@ -19,6 +19,7 @@ const useContextMenu = (
     menuArr.forEach((item) => {
       menu.append(new MenuItem(item))
     })
+
     const handleContextMenu = (e: MouseEvent) => {
       // 只有 target 包裹的选择器内才会显示
       const eventTarget = e.target as HTMLElement

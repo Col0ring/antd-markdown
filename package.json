@@ -11,7 +11,6 @@
   "main": "./build/main.js",
   "dependencies": {
     "ahooks": "^2.8.1",
-    "bootstrap": "^4.5.3",
     "classnames": "^2.2.6",
     "electron-store": "^6.0.1",
     "normalize.css": "^8.0.1",

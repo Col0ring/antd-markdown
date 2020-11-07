@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
-import styles from './FileItem.module.less'
+import { EditOutlined } from '@ant-design/icons'
 import { Tooltip, Typography } from 'antd'
 import { ID } from '@/interfaces/Data'
+import styles from './FileItem.module.less'
+import { getParentNode } from '@/utils/help'
 export interface FileItemProps {
   id: ID
   name: string
@@ -22,8 +24,12 @@ const FileItem: React.FC<FileItemProps> = ({
   return (
     <div
       className={styles.fileListItem}
-      onClick={() => {
-        onClick(id)
+      onClick={(e) => {
+        const target = e.target as HTMLElement
+        const parentNode = getParentNode(target, 'edit-icon-flag')
+        if (!parentNode) {
+          onClick(id)
+        }
       }}
     >
       <div className={styles.name}>
@@ -37,6 +43,7 @@ const FileItem: React.FC<FileItemProps> = ({
             editable={{
               editing: isEditing,
               onChange: (value) => onEditingChange(id, value),
+              icon: <EditOutlined className="edit-icon-flag" />,
               onStart: () => {
                 onEditingStart(id)
                 setVisible(false)

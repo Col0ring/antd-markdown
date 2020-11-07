@@ -13,7 +13,7 @@ export function obj2Arr<T = any>(obj: GLobalObject<T>): T[] {
 export function getParentNode(
   node: HTMLElement | null,
   parentClassName: string
-) {
+): HTMLElement | null {
   let current = node
   while (current !== null) {
     if (current.classList && current.classList.contains(parentClassName)) {
@@ -21,5 +21,5 @@ export function getParentNode(
     }
     current = current.parentElement
   }
-  return false
+  return null
 }
