@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect } from 'react'
 import { useImmer } from 'use-immer'
-import { Modal } from 'antd'
+import { Modal, Spin } from 'antd'
 import { v4 as uuid } from 'uuid'
 import pathModule from 'path'
 import fsModule from 'fs'
@@ -23,6 +23,7 @@ const initialState: LayoutProps = {
   activeFileId: '',
   editingFileId: '',
   fileLoading: false,
+  globalLoading: false,
   openedFileIds: [],
   unsavedFileIds: [],
   files: originFiles,
@@ -105,7 +106,6 @@ export const LayoutProvider: React.FC = ({ children }) => {
       return false
     }
   }, [layout.files, setLayout, throwError])
-
   const closeTab = useCallback(
     (id: ID) => {
       const { openedFileIds, activeFileId } = layout
@@ -135,21 +135,40 @@ export const LayoutProvider: React.FC = ({ children }) => {
   )
 
   const deleteFile = useCallback(
-    async (id: ID) => {
+    async (id: ID, isTrue = true) => {
       const { [id]: value, ...otherFiles } = layout.files
       if (layout.files[id].isNew) {
         setLayout((draft) => {
           draft.files = otherFiles
         })
       } else {
-        const res = await fileHelper.deleteFile(layout.files[id].path)
-        if (!res) {
-          throwError('删除文件失败')
-          return false
-        }
-        closeTab(id)
-        setLayout((draft) => {
-          draft.files = otherFiles
+        return new Promise<boolean>((resolve) => {
+          if (isTrue) {
+            Modal.confirm({
+              title: '提示',
+              centered: true,
+              content: '确认删除文件？',
+              okText: '确定',
+              cancelText: '取消',
+              async onOk() {
+                const res = await fileHelper.deleteFile(layout.files[id].path)
+                if (!res) {
+                  throwError('删除文件失败')
+                  resolve(false)
+                }
+                closeTab(id)
+                setLayout((draft) => {
+                  draft.files = otherFiles
+                })
+                resolve(true)
+              },
+            })
+          } else {
+            closeTab(id)
+            setLayout((draft) => {
+              draft.files = otherFiles
+            })
+          }
         })
       }
       return true
@@ -243,7 +262,9 @@ export const LayoutProvider: React.FC = ({ children }) => {
         deleteFile,
       }}
     >
-      {children}
+      <Spin spinning={layout.globalLoading} tip="正在加载中..">
+        {children}
+      </Spin>
     </LayoutContext.Provider>
   )
 }

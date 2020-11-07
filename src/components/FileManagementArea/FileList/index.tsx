@@ -12,9 +12,12 @@ import useContextMenu from '@/hooks/useContextMenu'
 const path = window.require('path') as typeof pathModule
 const { remote } = window.require('electron')
 const fs = window.require('fs') as typeof fsModule
-const savedLocation =
+let savedLocation =
   (settingsStore.get('savedFileLocation') as string) ||
   remote.app.getPath('documents')
+remote.ipcMain.addListener('savedFileLocation', (path: string) => {
+  savedLocation = path
+})
 export interface FileListProps {}
 
 const FileList: React.FC<FileListProps> = () => {
@@ -24,8 +27,8 @@ const FileList: React.FC<FileListProps> = () => {
   const fileArr = obj2Arr(searchFiles)
 
   const onFileDelete = useCallback(
-    async (id: ID) => {
-      await deleteFile(id)
+    async (id: ID, isTrue = true) => {
+      await deleteFile(id, isTrue)
     },
     [deleteFile]
   )
@@ -124,6 +127,16 @@ const FileList: React.FC<FileListProps> = () => {
           onContextClick((parentElement) => {
             if (parentElement) {
               onFileDelete(parentElement.dataset.id as string)
+            }
+          })
+        },
+      },
+      {
+        label: '移除',
+        click() {
+          onContextClick((parentElement) => {
+            if (parentElement) {
+              onFileDelete(parentElement.dataset.id as string, false)
             }
           })
         },

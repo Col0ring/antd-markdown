@@ -18,6 +18,7 @@ export interface LayoutProps {
   activeFileId: ID
   editingFileId: ID
   fileLoading: boolean
+  globalLoading: boolean
   openedFileIds: ID[]
   unsavedFileIds: ID[]
 }
@@ -29,5 +30,5 @@ export interface LayoutProviderProps<S extends LayoutProps = LayoutProps> {
   createNewFile: () => void
   importFiles: () => Promise<boolean>
   closeTab: (id: ID) => void
-  deleteFile: (id: ID) => Promise<boolean>
+  deleteFile: (id: ID, isTrue: boolean) => Promise<boolean>
 }

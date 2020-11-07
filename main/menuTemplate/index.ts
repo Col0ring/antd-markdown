@@ -9,7 +9,7 @@ import {
 import Store from 'electron-store'
 const settingsStore = new Store({ name: 'antd-markdown-settings' })
 
-const qiniuIsConfiged = ['accessKey', 'secretKey', 'bucketName'].every(
+const qiniuIsConfigured = ['accessKey', 'secretKey', 'bucketName'].every(
   (key) => !!settingsStore.get(key)
 )
 
@@ -99,7 +99,7 @@ const menuTemplate: (MenuItem | MenuItemConstructorOptions)[] = [
       {
         label: '自动同步',
         type: 'checkbox',
-        enabled: qiniuIsConfiged,
+        enabled: qiniuIsConfigured,
         checked: enableAutoSync,
         click: () => {
           settingsStore.set('enableAutoSync', !enableAutoSync)
@@ -107,14 +107,14 @@ const menuTemplate: (MenuItem | MenuItemConstructorOptions)[] = [
       },
       {
         label: '全部同步至云端',
-        enabled: qiniuIsConfiged,
+        enabled: qiniuIsConfigured,
         click: () => {
           ipcMain.emit('upload-all-to-qiniu')
         },
       },
       {
         label: '从云端下载到本地',
-        enabled: qiniuIsConfiged,
+        enabled: qiniuIsConfigured,
         click: () => {},
       },
     ],
