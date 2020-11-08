@@ -6,6 +6,9 @@ import EmptyData, { EmptyDataProps } from './EmptyData'
 import useLayout from '@/hooks/useLayout'
 import fileHelper from '@/utils/fileHelper'
 import useIpcRenderer from '@/hooks/useIpcRenderer'
+import { getAutoSync } from '@/utils/help'
+const { ipcRenderer } = window.require('electron')
+
 const EditingArea: React.FC = () => {
   const { layout, setLayout, createNewFile, closeTab } = useLayout()
   const {
@@ -72,6 +75,15 @@ const EditingArea: React.FC = () => {
     )
     if (res) {
       setLayout((draft) => {
+        if (getAutoSync()) {
+          console.log(getAutoSync())
+          ipcRenderer.send('upload-file', {
+            key: `${activeFile.name}.md`,
+            path: activeFile.path,
+          })
+        } else {
+          draft.files[activeFileId].isSynced = false
+        }
         draft.files[activeFileId].originContent =
           draft.files[activeFileId].content
         draft.unsavedFileIds = draft.unsavedFileIds.filter(

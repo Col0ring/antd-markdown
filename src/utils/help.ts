@@ -1,4 +1,5 @@
 import { File } from '@/interfaces/Data'
+import { settingsStore } from '@/utils/store'
 export function flattenFiles(files: File[]) {
   return files.reduce<GLobalObject<File>>((pre, next) => {
     pre[next.id] = next
@@ -22,4 +23,15 @@ export function getParentNode(
     current = current.parentElement
   }
   return null
+}
+
+export function getAutoSync() {
+  return ['accessKey', 'secretKey', 'bucketName', 'enableAutoSync'].every(
+    (key) => !!settingsStore.get(key)
+  )
+}
+
+export function formatTime(timestamp: number) {
+  const date = new Date(timestamp)
+  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString()
 }

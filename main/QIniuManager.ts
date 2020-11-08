@@ -17,7 +17,7 @@ class QiniuManager {
 
     // init config class
     this.config = new qiniu.conf.Config({
-      zone: qiniu.zone.Zone_z0,
+      zone: qiniu.zone.Zone_z2,
     })
     // 空间对应的机房
     this.bucketManager = new qiniu.rs.BucketManager(this.mac, this.config)
@@ -52,10 +52,11 @@ class QiniuManager {
       )
     })
   }
+  // 获取测试的 BucketDomain(
   getBucketDomain() {
     const reqURL = `http://api.qiniu.com/v6/domain/list?tbl=${this.bucket}`
     const digest = qiniu.util.generateAccessToken(this.mac, reqURL)
-    console.log('trigger here')
+
     return new Promise((resolve, reject) => {
       qiniu.rpc.postWithoutForm(
         reqURL,
@@ -65,7 +66,7 @@ class QiniuManager {
     })
   }
   getStat(key: string) {
-    return new Promise((resolve, reject) => {
+    return new Promise<any>((resolve, reject) => {
       this.bucketManager.stat(
         this.bucket,
         key,
@@ -111,6 +112,7 @@ class QiniuManager {
       })
       .then((response) => {
         const writer = fs.createWriteStream(downloadPath)
+        // 可读流调用 pipe 方法写入到可写流当中
         response.data.pipe(writer)
         return new Promise((resolve, reject) => {
           writer.on('finish', resolve)
@@ -121,7 +123,7 @@ class QiniuManager {
         return Promise.reject({ err: err.response })
       })
   }
-  _handleCallback(
+  private _handleCallback(
     resolve: (value: any) => void,
     reject: (reason: any) => void
   ) {

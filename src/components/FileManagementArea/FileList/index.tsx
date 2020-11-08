@@ -6,16 +6,16 @@ import { ID } from '@/interfaces/Data'
 import { settingsStore } from '@/utils/store'
 import FileItem, { FileItemProps } from '../FileItem'
 import useLayout from '@/hooks/useLayout'
+import useContextMenu from '@/hooks/useContextMenu'
 import fileHelper from '@/utils/fileHelper'
 import { getParentNode, obj2Arr } from '@/utils/help'
-import useContextMenu from '@/hooks/useContextMenu'
 const path = window.require('path') as typeof pathModule
 const { remote } = window.require('electron')
 const fs = window.require('fs') as typeof fsModule
 let savedLocation =
   (settingsStore.get('savedFileLocation') as string) ||
   remote.app.getPath('documents')
-remote.ipcMain.addListener('savedFileLocation', (path: string) => {
+remote.ipcMain.on('savedFileLocation', (e, path: string) => {
   savedLocation = path
 })
 export interface FileListProps {}
@@ -157,6 +157,7 @@ const FileList: React.FC<FileListProps> = () => {
     },
     [currentClickElement]
   )
+
   return (
     <List
       className="context-menu-target-list"

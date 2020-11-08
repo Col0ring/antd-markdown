@@ -1,4 +1,4 @@
-const { remote, ipcRenderer } = require('electron')
+const { remote, ipcRenderer, browserWindow } = require('electron')
 const Store = require('electron-store')
 const settingsStore = new Store({ name: 'antd-markdown-settings' })
 const qiniuConfigArr = [
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
     // sent a event back to main process to enable menu items if qiniu is configured
-    ipcRenderer.send('config-is-saved')
+    ipcRenderer.send('configure-is-saved')
     remote.getCurrentWindow().close()
   })
   $('.nav-tabs').addEventListener('click', (e) => {

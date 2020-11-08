@@ -8,6 +8,8 @@ export interface File {
   isLoaded?: boolean
   name: string
   content?: string
+  isSynced?: boolean
+  updatedAt?: number
   originContent?: string
 }
 

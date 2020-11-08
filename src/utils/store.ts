@@ -11,11 +11,13 @@ export const saveFiles2Store = (files: GLobalObject<File>) => {
     return
   }
   const filesStoreObj = filesArr.reduce<GLobalObject<File>>((res, file) => {
-    const { id, path, name } = file
+    const { id, path, name, updatedAt, isSynced } = file
     res[id] = {
       id,
       path,
       name,
+      isSynced,
+      updatedAt,
     }
     return res
   }, {})

@@ -4,11 +4,12 @@ import { Modal, Spin } from 'antd'
 import { v4 as uuid } from 'uuid'
 import pathModule from 'path'
 import fsModule from 'fs'
-import { flattenFiles, obj2Arr } from '@/utils/help'
+import { flattenFiles, obj2Arr, getAutoSync } from '@/utils/help'
 import { saveFiles2Store, fileStore } from '@/utils/store'
 import { ID, LayoutProps, LayoutProviderProps, File } from '@/interfaces/Data'
 import fileHelper from '@/utils/fileHelper'
 import useIpcRenderer from '@/hooks/useIpcRenderer'
+import { ipcRenderer } from 'electron'
 const { remote } = window.require('electron')
 const path = window.require('path') as typeof pathModule
 const fs = window.require('fs') as typeof fsModule
@@ -182,12 +183,22 @@ export const LayoutProvider: React.FC = ({ children }) => {
       if (!loadFile) {
         return false
       }
-
-      if (!loadFile.isLoaded) {
+      const { isLoaded, path, name } = loadFile
+      if (!isLoaded) {
         setLayout((draft) => {
           draft.fileLoading = true
         })
-        const res = await fileHelper.readFile(loadFile.path)
+        let res: string | boolean = false
+        if (getAutoSync()) {
+          ipcRenderer.send('download-file', {
+            key: `${name}.md`,
+            path,
+            id,
+          })
+        } else {
+          res = await fileHelper.readFile(loadFile.path)
+        }
+
         setLayout((draft) => {
           draft.fileLoading = false
         })
@@ -246,9 +257,18 @@ export const LayoutProvider: React.FC = ({ children }) => {
     }
   }, [layout.activeFileId, loadFile, setLayout])
 
+  const onFileUploaded = useCallback(() => {
+    const activeFile = layout.files[layout.activeFileId]
+    setLayout((draft) => {
+      draft.files[activeFile.id].isSynced = true
+      draft.files[activeFile.id].updatedAt = Date.now()
+    })
+  }, [layout.activeFileId, layout.files, setLayout])
+
   useIpcRenderer({
     'create-new-file': createNewFile,
     'import-file': importFiles,
+    'active-file-uploaded': onFileUploaded,
   })
   return (
     <LayoutContext.Provider
