@@ -37,7 +37,7 @@ if (env === 'development') {
   const watching = webpack(config).watch(
     {
       aggregateTimeout: 300,
-      ignored: /node_modules/
+      ignored: /node_modules/,
     },
     (err, stats) => {
       const flag = errorHandler(err, stats)

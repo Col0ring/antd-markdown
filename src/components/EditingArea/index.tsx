@@ -76,7 +76,6 @@ const EditingArea: React.FC = () => {
     if (res) {
       setLayout((draft) => {
         if (getAutoSync()) {
-          console.log(getAutoSync())
           ipcRenderer.send('upload-file', {
             key: `${activeFile.name}.md`,
             path: activeFile.path,

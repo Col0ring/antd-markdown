@@ -9,8 +9,7 @@ import { saveFiles2Store, fileStore } from '@/utils/store'
 import { ID, LayoutProps, LayoutProviderProps, File } from '@/interfaces/Data'
 import fileHelper from '@/utils/fileHelper'
 import useIpcRenderer from '@/hooks/useIpcRenderer'
-import { ipcRenderer } from 'electron'
-const { remote } = window.require('electron')
+const { remote, ipcRenderer } = window.require('electron')
 const path = window.require('path') as typeof pathModule
 const fs = window.require('fs') as typeof fsModule
 const originFiles = flattenFiles(
@@ -195,13 +194,15 @@ export const LayoutProvider: React.FC = ({ children }) => {
             path,
             id,
           })
+          return
+          // 在下面监听结束 loading
         } else {
           res = await fileHelper.readFile(loadFile.path)
+          setLayout((draft) => {
+            draft.fileLoading = false
+          })
         }
 
-        setLayout((draft) => {
-          draft.fileLoading = false
-        })
         if (res) {
           const value = typeof res === 'boolean' ? '' : res
           const newFile = {
@@ -218,6 +219,10 @@ export const LayoutProvider: React.FC = ({ children }) => {
           await deleteFile(id)
           return false
         }
+      } else {
+        setLayout((draft) => {
+          draft.fileLoading = false
+        })
       }
       return true
     },
@@ -265,10 +270,69 @@ export const LayoutProvider: React.FC = ({ children }) => {
     })
   }, [layout.activeFileId, layout.files, setLayout])
 
+  const onFilesUploaded = useCallback(() => {
+    const newFiles = obj2Arr(layout.files).reduce<GLobalObject<File>>(
+      (files, file) => {
+        files[file.id] = {
+          ...layout.files[file.id],
+          isSynced: true,
+          updatedAt: Date.now(),
+        }
+        return files
+      },
+      {}
+    )
+    setLayout((draft) => {
+      draft.files = newFiles
+    })
+  }, [layout.files, setLayout])
+
+  const onFileDownloaded = useCallback(
+    async (e, { id, status }: { id: ID; status: string }) => {
+      const currentFile = layout.files[id]
+      const res = await fileHelper.readFile(currentFile.path)
+      // 更新最新的内容
+      if (res) {
+        const value = typeof res === 'boolean' ? '' : res
+        setLayout((draft) => {
+          console.log(status)
+          if (status === 'download-success') {
+            draft.files[id] = {
+              ...currentFile,
+              content: value,
+              isLoaded: true,
+              isSynced: true,
+              updatedAt: Date.now(),
+            }
+          } else {
+            draft.files[id] = {
+              ...currentFile,
+              content: value,
+              isLoaded: true,
+            }
+          }
+        })
+      } else {
+        throwError('打开文件失败')
+        await deleteFile(id)
+      }
+      setLayout((draft) => {
+        draft.fileLoading = false
+      })
+    },
+    [deleteFile, layout.files, setLayout, throwError]
+  )
   useIpcRenderer({
     'create-new-file': createNewFile,
     'import-file': importFiles,
     'active-file-uploaded': onFileUploaded,
+    'file-downloaded': onFileDownloaded,
+    'files-uploaded': onFilesUploaded,
+    'loading-status': (e, status: boolean) => {
+      setLayout((draft) => {
+        draft.globalLoading = status
+      })
+    },
   })
   return (
     <LayoutContext.Provider

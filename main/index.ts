@@ -7,10 +7,11 @@ import {
 } from 'electron'
 import Store from 'electron-store'
 import path from 'path'
+import fs from 'fs'
 import isDev from 'electron-is-dev'
 import AppWindow from './AppWindow'
 import buildAppMenu from './appMenu'
-import QiniuManager from '@@/main/QIniuManager'
+import QiniuManager from './QIniuManager'
 import { File } from '@/interfaces/Data'
 let mainWin: AppWindow | null = null
 let settingWin: AppWindow | null = null
@@ -46,6 +47,12 @@ function createSettingWindow(
 
 function createQiniuEvents(win: BrowserWindow) {
   ipcMain.on('upload-file', (event, data: { key: string; path: string }) => {
+    if (!fs.existsSync(data.path)) {
+      return dialog.showErrorBox(
+        '同步失败',
+        '有文件已被删除或不存在,请重启应用重试'
+      )
+    }
     const manager = createManager()
     manager
       .uploadFile(data.key, data.path)
@@ -62,8 +69,10 @@ function createQiniuEvents(win: BrowserWindow) {
     const { key, path, id } = data
     manager.getStat(data.key).then(
       (resp) => {
+        // putTime 是 100 纳秒为单位的
         const serverUpdatedTime = Math.round(resp.putTime / 10000)
         const localUpdatedTime = filesObj[id].updatedAt || 0
+        // 如果没有本地时间，就是没有上传过
         if (serverUpdatedTime > localUpdatedTime || !localUpdatedTime) {
           manager.downloadFile(key, path).then(() => {
             win.webContents.send('file-downloaded', {
@@ -94,11 +103,11 @@ function createQiniuEvents(win: BrowserWindow) {
     const filesObj = (fileStore.get('files') as GLobalObject<File>) || {}
     const uploadPromiseArr = Object.keys(filesObj).map((key) => {
       const file = filesObj[key]
+
       return manager.uploadFile(`${file.name}.md`, file.path)
     })
     Promise.all(uploadPromiseArr)
       .then((result) => {
-        console.log(result)
         // show uploaded message
         dialog.showMessageBoxSync({
           type: 'info',
@@ -107,8 +116,15 @@ function createQiniuEvents(win: BrowserWindow) {
         })
         win.webContents.send('files-uploaded')
       })
-      .catch(() => {
-        dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
+      .catch((err) => {
+        if (err === 'no file') {
+          dialog.showErrorBox(
+            '同步失败',
+            '有文件已被删除或不存在,请重启应用重试'
+          )
+        } else {
+          dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
+        }
       })
       .finally(() => {
         win.webContents.send('loading-status', false)

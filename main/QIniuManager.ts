@@ -23,6 +23,9 @@ class QiniuManager {
     this.bucketManager = new qiniu.rs.BucketManager(this.mac, this.config)
   }
   uploadFile(key: string, localFilePath: string) {
+    if (!fs.existsSync(localFilePath)) {
+      return Promise.reject('no file')
+    }
     // generate uploadToken
     const options = {
       // 如果有同名的强制覆盖
@@ -112,7 +115,7 @@ class QiniuManager {
       })
       .then((response) => {
         const writer = fs.createWriteStream(downloadPath)
-        // 可读流调用 pipe 方法写入到可写流当中
+        // 可读流调用 pipe 方法写入到可写流当中，下载的时候直接将原文件覆盖
         response.data.pipe(writer)
         return new Promise((resolve, reject) => {
           writer.on('finish', resolve)
