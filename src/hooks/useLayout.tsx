@@ -108,30 +108,31 @@ export const LayoutProvider: React.FC = ({ children }) => {
   }, [layout.files, setLayout, throwError])
   const closeTab = useCallback(
     (id: ID) => {
-      const { openedFileIds, activeFileId } = layout
-      const closeIndex = openedFileIds.findIndex((fileId) => fileId === id)
-      if (closeIndex > -1) {
-        if (activeFileId === id) {
-          let newActiveId: ID = ''
-          if (closeIndex !== 0) {
-            newActiveId = openedFileIds[closeIndex - 1]
-          } else {
-            newActiveId =
-              openedFileIds.length > 1 ? openedFileIds[closeIndex + 1] : ''
-          }
-          setLayout((draft) => {
+      setLayout((draft) => {
+        const closeIndex = draft.openedFileIds.findIndex(
+          (fileId) => fileId === id
+        )
+        if (closeIndex > -1) {
+          if (draft.activeFileId === id) {
+            let newActiveId: ID = ''
+            if (closeIndex !== 0) {
+              newActiveId = draft.openedFileIds[closeIndex - 1]
+            } else {
+              newActiveId =
+                draft.openedFileIds.length > 1
+                  ? draft.openedFileIds[closeIndex + 1]
+                  : ''
+            }
             draft.activeFileId = newActiveId
-          })
-        }
+          }
 
-        const newOpenedFileIds = [...openedFileIds]
-        newOpenedFileIds.splice(closeIndex, 1)
-        setLayout((draft) => {
+          const newOpenedFileIds = [...draft.openedFileIds]
+          newOpenedFileIds.splice(closeIndex, 1)
           draft.openedFileIds = newOpenedFileIds
-        })
-      }
+        }
+      })
     },
-    [layout, setLayout]
+    [setLayout]
   )
 
   const deleteFile = useCallback(
@@ -156,6 +157,11 @@ export const LayoutProvider: React.FC = ({ children }) => {
                   throwError('删除文件失败')
                   resolve(false)
                 }
+                if (res && layout.files[id].isSynced && getAutoSync()) {
+                  ipcRenderer.send('delete-file', {
+                    key: `${layout.files[id].name}.md`,
+                  })
+                }
                 closeTab(id)
                 setLayout((draft) => {
                   draft.files = otherFiles
@@ -178,11 +184,11 @@ export const LayoutProvider: React.FC = ({ children }) => {
 
   const loadFile = useCallback(
     async (id: ID) => {
-      const loadFile = layout.files[id]
-      if (!loadFile) {
+      const currentFile = layout.files[id]
+      if (!currentFile) {
         return false
       }
-      const { isLoaded, path, name } = loadFile
+      const { isLoaded, path, name } = currentFile
       if (!isLoaded) {
         setLayout((draft) => {
           draft.fileLoading = true
@@ -197,7 +203,7 @@ export const LayoutProvider: React.FC = ({ children }) => {
           return
           // 在下面监听结束 loading
         } else {
-          res = await fileHelper.readFile(loadFile.path)
+          res = await fileHelper.readFile(currentFile.path)
           setLayout((draft) => {
             draft.fileLoading = false
           })
@@ -228,39 +234,6 @@ export const LayoutProvider: React.FC = ({ children }) => {
     },
     [deleteFile, layout.files, setLayout, throwError]
   )
-
-  useEffect(() => {
-    setLayout((draft) => {
-      draft.searchFiles = draft.files
-      draft.openedFileIds = draft.openedFileIds.filter((id) => draft.files[id])
-      draft.unsavedFileIds = draft.unsavedFileIds.filter(
-        (id) => draft.files[id]
-      )
-    })
-    saveFiles2Store(layout.files)
-  }, [layout.files, setLayout])
-  useEffect(() => {
-    if (
-      !layout.openedFileIds.includes(layout.activeFileId) &&
-      layout.activeFileId
-    ) {
-      setLayout((draft) => {
-        draft.openedFileIds.push(layout.activeFileId)
-      })
-    }
-  }, [layout.activeFileId, layout.openedFileIds, setLayout])
-
-  useEffect(() => {
-    if (layout.activeFileId) {
-      loadFile(layout.activeFileId).then((res) => {
-        if (res) {
-          setLayout((draft) => {
-            draft.editingFileId = layout.activeFileId
-          })
-        }
-      })
-    }
-  }, [layout.activeFileId, loadFile, setLayout])
 
   const onFileUploaded = useCallback(() => {
     const activeFile = layout.files[layout.activeFileId]
@@ -311,6 +284,7 @@ export const LayoutProvider: React.FC = ({ children }) => {
               isLoaded: true,
             }
           }
+          draft.editingFileId = id
         })
       } else {
         throwError('打开文件失败')
@@ -322,12 +296,48 @@ export const LayoutProvider: React.FC = ({ children }) => {
     },
     [deleteFile, layout.files, setLayout, throwError]
   )
+
+  useEffect(() => {
+    setLayout((draft) => {
+      draft.searchFiles = draft.files
+      draft.openedFileIds = draft.openedFileIds.filter((id) => draft.files[id])
+      draft.unsavedFileIds = draft.unsavedFileIds.filter(
+        (id) => draft.files[id]
+      )
+    })
+    saveFiles2Store(layout.files)
+  }, [layout.files, setLayout])
+
+  useEffect(() => {
+    if (
+      !layout.openedFileIds.includes(layout.activeFileId) &&
+      layout.activeFileId
+    ) {
+      setLayout((draft) => {
+        draft.openedFileIds.push(layout.activeFileId)
+      })
+    }
+  }, [layout.activeFileId, layout.openedFileIds, setLayout])
+  useEffect(() => {
+    if (layout.activeFileId) {
+      loadFile(layout.activeFileId).then((res) => {
+        // 如果是本地加载
+        if (res) {
+          setLayout((draft) => {
+            draft.editingFileId = layout.activeFileId
+          })
+        }
+      })
+    }
+  }, [layout.activeFileId, loadFile, setLayout])
+
   useIpcRenderer({
     'create-new-file': createNewFile,
     'import-file': importFiles,
     'active-file-uploaded': onFileUploaded,
     'file-downloaded': onFileDownloaded,
     'files-uploaded': onFilesUploaded,
+    'file-deleted': () => {},
     'loading-status': (e, status: boolean) => {
       setLayout((draft) => {
         draft.globalLoading = status

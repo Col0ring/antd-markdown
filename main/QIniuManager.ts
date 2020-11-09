@@ -22,6 +22,7 @@ class QiniuManager {
     // 空间对应的机房
     this.bucketManager = new qiniu.rs.BucketManager(this.mac, this.config)
   }
+
   uploadFile(key: string, localFilePath: string) {
     if (!fs.existsSync(localFilePath)) {
       return Promise.reject('no file')
@@ -42,6 +43,20 @@ class QiniuManager {
         key,
         localFilePath,
         putExtra,
+        this._handleCallback(resolve, reject)
+      )
+    })
+  }
+  renameFile(key: string, newName: string) {
+    return new Promise((resolve, reject) => {
+      this.bucketManager.move(
+        this.bucket,
+        key,
+        this.bucket,
+        newName,
+        {
+          force: false,
+        },
         this._handleCallback(resolve, reject)
       )
     })

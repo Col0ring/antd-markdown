@@ -8,9 +8,10 @@ import FileItem, { FileItemProps } from '../FileItem'
 import useLayout from '@/hooks/useLayout'
 import useContextMenu from '@/hooks/useContextMenu'
 import fileHelper from '@/utils/fileHelper'
-import { getParentNode, obj2Arr } from '@/utils/help'
+import { getAutoSync, getParentNode, obj2Arr } from '@/utils/help'
+import useIpcRenderer from '@/hooks/useIpcRenderer'
 const path = window.require('path') as typeof pathModule
-const { remote } = window.require('electron')
+const { remote, ipcRenderer } = window.require('electron')
 const fs = window.require('fs') as typeof fsModule
 let savedLocation =
   (settingsStore.get('savedFileLocation') as string) ||
@@ -76,6 +77,13 @@ const FileList: React.FC<FileListProps> = () => {
       } else {
         const oldPath = files[id].path
         res = await fileHelper.renameFile(oldPath, newPath)
+        if (res && files[id].isSynced && getAutoSync()) {
+          ipcRenderer.send('rename-file', {
+            id: id,
+            key: `${files[id].name}.md`,
+            newName: `${name}.md`,
+          })
+        }
       }
       if (res) {
         setLayout((draft) => {
@@ -157,6 +165,15 @@ const FileList: React.FC<FileListProps> = () => {
     },
     [currentClickElement]
   )
+
+  useIpcRenderer({
+    'file-renamed': (e, id) => {
+      setLayout((draft) => {
+        draft.files[id].isSynced = true
+        draft.files[id].updatedAt = Date.now()
+      })
+    },
+  })
 
   return (
     <List

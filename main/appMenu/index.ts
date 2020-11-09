@@ -122,7 +122,9 @@ function createMenuTemplate() {
         {
           label: '从云端下载到本地',
           enabled: qiniuIsConfigured,
-          click: () => {},
+          click: () => {
+            ipcMain.emit('download-all-from-qiniu')
+          },
         },
       ],
     },
