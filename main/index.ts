@@ -150,35 +150,40 @@ function createQiniuEvents(win: BrowserWindow) {
   ipcMain.on('download-all-from-qiniu', () => {
     win.webContents.send('loading-status', true)
     const manager = createManager()
-    const filesObj = (fileStore.get('files') as GLobalObject<File>) || {}
-    const downloadPromiseArr = Object.keys(filesObj).map((key) => {
-      const file = filesObj[key]
-
-      return manager.downloadFile(`${file.name}.md`, file.path)
-    })
-    Promise.all(downloadPromiseArr)
-      .then((result) => {
-        // show uploaded message
-        dialog.showMessageBoxSync({
-          type: 'info',
-          title: `成功下载了${result.length}个文件`,
-          message: `成功下载了${result.length}个文件`,
-        })
-        win.webContents.send('files-uploaded')
+    manager
+      .getFileList()
+      .then((res) => {
+        console.log(res)
       })
-      .catch((err) => {
-        if (err === 'no file') {
-          dialog.showErrorBox(
-            '同步失败',
-            '有文件已被删除或不存在,请重启应用重试'
-          )
-        } else {
-          dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
-        }
+      .catch(() => {
+        dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
       })
       .finally(() => {
         win.webContents.send('loading-status', false)
       })
+    // Promise.all(downloadPromiseArr)
+    //   .then((result) => {
+    //     // show uploaded message
+    //     dialog.showMessageBoxSync({
+    //       type: 'info',
+    //       title: `成功下载了${result.length}个文件`,
+    //       message: `成功下载了${result.length}个文件`,
+    //     })
+    //     win.webContents.send('files-uploaded')
+    //   })
+    //   .catch((err) => {
+    //     if (err === 'no file') {
+    //       dialog.showErrorBox(
+    //         '同步失败',
+    //         '有文件已被删除或不存在,请重启应用重试'
+    //       )
+    //     } else {
+    //       dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
+    //     }
+    //   })
+    //   .finally(() => {
+    //     win.webContents.send('loading-status', false)
+    //   })
   })
 
   ipcMain.on('upload-all-to-qiniu', () => {

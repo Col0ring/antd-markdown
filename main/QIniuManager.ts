@@ -141,6 +141,17 @@ class QiniuManager {
         return Promise.reject({ err: err.response })
       })
   }
+
+  getFileList() {
+    return new Promise((resolve, reject) => {
+      this.bucketManager.listPrefix(
+        this.bucket,
+        null,
+        this._handleCallback(resolve, reject)
+      )
+    })
+  }
+
   private _handleCallback(
     resolve: (value: any) => void,
     reject: (reason: any) => void
