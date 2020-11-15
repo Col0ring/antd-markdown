@@ -15,6 +15,7 @@ import QiniuManager from './QIniuManager'
 import { File } from '@/interfaces/Data'
 let mainWin: AppWindow | null = null
 let settingWin: AppWindow | null = null
+const defaultPath = app.getPath('documents')
 const settingsStore = new Store({ name: 'antd-markdown-settings' })
 const fileStore = new Store({ name: 'antd-markdown-data' })
 const createManager = () => {
@@ -68,9 +69,9 @@ function createQiniuEvents(win: BrowserWindow) {
     const filesObj = (fileStore.get('files') as GLobalObject<File>) || {}
     const { key, path, id } = data
     manager.getStat(data.key).then(
-      (resp) => {
+      (res) => {
         // putTime 是 100 纳秒为单位的
-        const serverUpdatedTime = Math.round(resp.putTime / 10000)
+        const serverUpdatedTime = Math.round(res.putTime / 10000)
         const localUpdatedTime = filesObj[id].updatedAt || 0
         // 如果没有本地时间，就是没有上传过
         if (serverUpdatedTime > localUpdatedTime || !localUpdatedTime) {
@@ -150,40 +151,72 @@ function createQiniuEvents(win: BrowserWindow) {
   ipcMain.on('download-all-from-qiniu', () => {
     win.webContents.send('loading-status', true)
     const manager = createManager()
+    const fileObj = (fileStore.get('files') as GLobalObject<File>) || {}
+    const localFiles = Object.keys(fileObj)
+      .map((key) => fileObj[key])
+      .reduce<GLobalObject<File>>((pre, next) => {
+        const name = next.name
+        pre[name] = next
+        return pre
+      }, {})
+    const savedLocation =
+      (settingsStore.get('savedFileLocation') as string) || defaultPath
     manager
       .getFileList()
-      .then((res) => {
-        console.log(res)
+      .then((res: any) => {
+        const remoteFiles = res.items
+        const filterRemoteFiles = remoteFiles.filter((item: any) => {
+          const strArr = item.key.split('.')
+          const fileName = strArr.slice(0, strArr.length - 1).join('.')
+          if (localFiles[fileName]) {
+            const localFile = localFiles[fileName]
+            // putTime 是 100 纳秒为单位的
+            const serverUpdatedTime = Math.round(item.putTime / 10000)
+            const localUpdatedTime = localFile.updatedAt || 0
+            return serverUpdatedTime > localUpdatedTime
+          }
+          return true
+        })
+
+        const downloadPromiseArr = filterRemoteFiles.map((item: any) => {
+          const key = item.key
+          return manager.downloadFile(key, savedLocation + '/' + key)
+        })
+        Promise.all(downloadPromiseArr)
+          .then((res) => {
+            if ((res.length as number) === 0) {
+              dialog.showMessageBoxSync({
+                type: 'info',
+                title: '所有文件已经是最新',
+                message: '所有文件已经是最新',
+              })
+              return
+            }
+            // show uploaded message
+            dialog.showMessageBoxSync({
+              type: 'info',
+              title: `成功下载了${res.length}个文件`,
+              message: `成功下载了${res.length}个文件`,
+            })
+            win.webContents.send(
+              'files-downloaded',
+              filterRemoteFiles,
+              savedLocation
+            )
+          })
+          .catch((err) => {
+            dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
+          })
+          .finally(() => {
+            win.webContents.send('loading-status', false)
+          })
       })
-      .catch(() => {
+      .catch((err) => {
         dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
       })
       .finally(() => {
         win.webContents.send('loading-status', false)
       })
-    // Promise.all(downloadPromiseArr)
-    //   .then((result) => {
-    //     // show uploaded message
-    //     dialog.showMessageBoxSync({
-    //       type: 'info',
-    //       title: `成功下载了${result.length}个文件`,
-    //       message: `成功下载了${result.length}个文件`,
-    //     })
-    //     win.webContents.send('files-uploaded')
-    //   })
-    //   .catch((err) => {
-    //     if (err === 'no file') {
-    //       dialog.showErrorBox(
-    //         '同步失败',
-    //         '有文件已被删除或不存在,请重启应用重试'
-    //       )
-    //     } else {
-    //       dialog.showErrorBox('同步失败', '请检查七牛云参数是否正确')
-    //     }
-    //   })
-    //   .finally(() => {
-    //     win.webContents.send('loading-status', false)
-    //   })
   })
 
   ipcMain.on('upload-all-to-qiniu', () => {

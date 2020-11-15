@@ -26,11 +26,13 @@
 
 ## Usage
 
+并没有发布`release`版本，如果需要使用可以自行克隆项目然后`npm run dist`编译成对应平台安装包。
+
 ```sh
 # Clone this repository
-git clone -b antd https://github.com/Col0ring/ts-react-electron-template.git
+git clone https://github.com/Col0ring/antd-markdown.git
 # Go into the repository
-cd ts-react-electron-template
+cd antd-markdown
 # Install dependencies
 npm install
 # or

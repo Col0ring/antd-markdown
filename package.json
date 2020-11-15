@@ -2,7 +2,7 @@
   "name": "antd-markdown",
   "description": "a markdown viewer",
   "version": "0.1.1",
-  "private": true,
+  "private": false,
   "author": {
     "name": "Col0ring",
     "email": "xylcol0ring@gmail.com"
@@ -70,9 +70,7 @@
     "package-all": "npm run build && electron-builder build -mwl",
     "package-mac": "npm run  build && electron-builder build --mac",
     "package-linux": "npm run  build && electron-builder build --linux",
-    "package-win": "npm run  build && electron-builder build --win --x64",
-    "release": "electron-builder  build -mwl",
-    "prerelease": "npm run build"
+    "package-win": "npm run  build && electron-builder build --win --x64"
   },
   "homepage": "./",
   "build": {

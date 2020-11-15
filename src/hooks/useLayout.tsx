@@ -268,7 +268,6 @@ export const LayoutProvider: React.FC = ({ children }) => {
       if (res) {
         const value = typeof res === 'boolean' ? '' : res
         setLayout((draft) => {
-          console.log(status)
           if (status === 'download-success') {
             draft.files[id] = {
               ...currentFile,
@@ -295,6 +294,45 @@ export const LayoutProvider: React.FC = ({ children }) => {
       })
     },
     [deleteFile, layout.files, setLayout, throwError]
+  )
+
+  const onFilesDownloaded = useCallback(
+    (e, remoteFiles: any[], savedLocation: string) => {
+      setLayout((draft) => {
+        const localFiles = Object.keys(draft.files)
+          .map((key) => draft.files[key])
+          .reduce<GLobalObject<File>>((pre, next) => {
+            const name = next.name
+            pre[name] = next
+            return pre
+          }, {})
+        remoteFiles.forEach((item) => {
+          const strArr = item.key.split('.')
+          const fileName = strArr.slice(0, strArr.length - 1).join('.')
+          const file = localFiles[fileName]
+          if (file) {
+            draft.files[file.id] = {
+              ...draft.files[file.id],
+              isLoaded: false,
+              isSynced: true,
+              updatedAt: Date.now(),
+            }
+          } else {
+            const newId = uuid()
+            draft.files[newId] = {
+              id: newId,
+              name: fileName,
+              content: '',
+              originContent: '',
+              updatedAt: Date.now(),
+              path: savedLocation + '/' + item.key,
+            }
+          }
+        })
+        draft.editingFileId = ''
+      })
+    },
+    [setLayout]
   )
 
   useEffect(() => {
@@ -336,6 +374,7 @@ export const LayoutProvider: React.FC = ({ children }) => {
     'import-file': importFiles,
     'active-file-uploaded': onFileUploaded,
     'file-downloaded': onFileDownloaded,
+    'files-downloaded': onFilesDownloaded,
     'files-uploaded': onFilesUploaded,
     'file-deleted': () => {},
     'loading-status': (e, status: boolean) => {
