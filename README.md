@@ -27,6 +27,7 @@
 ## Usage
 
 并没有发布`release`版本，如果需要使用可以自行克隆项目然后`npm run dist`编译成对应平台安装包。
+**注：** 目前只支持华南地区的 zone，后续修改为自行选择。
 
 ```sh
 # Clone this repository
