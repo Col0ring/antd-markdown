@@ -4,6 +4,7 @@ import 'easymde/dist/easymde.min.css'
 import { File, ID } from '@/interfaces/Data'
 import styles from './Editor.module.less'
 import { formatTime } from '@/utils/help'
+
 export interface EditorProps {
   editingFile: File
   onChange: (id: ID, value: string) => void

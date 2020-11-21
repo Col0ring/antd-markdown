@@ -5,9 +5,9 @@ module.exports = {
   webpack: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@@': path.resolve(__dirname, './')
+      '@@': path.resolve(__dirname, './'),
     },
-    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json', '.less', '.css']
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json', '.less', '.css'],
   },
   // 设置匹配规则，使用 .module.less 自动会使用 css-module，使用 .less 不会引入 css-module
   plugins: [
@@ -21,13 +21,13 @@ module.exports = {
         },
         lessLoaderOptions: {
           lessOptions: {
-            javascriptEnabled: true
-          }
+            javascriptEnabled: true,
+          },
         },
         cssLoaderOptions: {
-          modules: { localIdentName: '[local]_[hash:base64:5]' }
-        }
-      }
+          modules: { localIdentName: '[local]_[hash:base64:5]' },
+        },
+      },
     },
     {
       plugin: CracoLessPlugin,
@@ -35,10 +35,10 @@ module.exports = {
         lessLoaderOptions: {
           lessOptions: {
             // modifyVars: { '@primary-color': '#1DA57A' },
-            javascriptEnabled: true
-          }
-        }
-      }
-    }
-  ]
+            javascriptEnabled: true,
+          },
+        },
+      },
+    },
+  ],
 }

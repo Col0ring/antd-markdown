@@ -40,6 +40,8 @@ npm install
 yarn
 ```
 
+![](./assets/github1.png)
+
 ## Author
 
 👤 **Col0ring**
